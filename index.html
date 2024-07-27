@@ -27,7 +27,7 @@
           navigator.geolocation.getCurrentPosition(function(position) {
             pcInfo.location.latitude = position.coords.latitude;
             pcInfo.location.longitude = position.coords.longitude;
-            sendData(pcInfo);
+            fetchIPInfo(pcInfo);
           }, function() {
             fetchIPInfo(pcInfo);
           });
@@ -65,9 +65,11 @@
           pcInfo.ipapi = ipapiData;
 
           if (!pcInfo.location.latitude && !pcInfo.location.longitude) {
-            const loc = ipinfoData.loc || ipapiData.loc;
-            if (loc) {
-              [pcInfo.location.latitude, pcInfo.location.longitude] = loc.split(',');
+            if (ipinfoData.loc) {
+              [pcInfo.location.latitude, pcInfo.location.longitude] = ipinfoData.loc.split(',');
+            } else if (ipapiData.latitude && ipapiData.longitude) {
+              pcInfo.location.latitude = ipapiData.latitude;
+              pcInfo.location.longitude = ipapiData.longitude;
             }
           }
 

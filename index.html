@@ -7,6 +7,8 @@
 </head>
 <body>
   <h1>PC情報をRequestBinに送信中...</h1>
+  <div id="GeoIP-ipinfo"></div>
+  <div id="GeoIP-ipapi"></div>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       function collectPCInfo() {
@@ -63,6 +65,9 @@
 
           pcInfo.ipinfo = ipinfoData;
           pcInfo.ipapi = ipapiData;
+
+          document.getElementById('GeoIP-ipinfo').textContent = JSON.stringify(ipinfoData);
+          document.getElementById('GeoIP-ipapi').textContent = JSON.stringify(ipapiData);
 
           if (!pcInfo.location.latitude && !pcInfo.location.longitude) {
             if (ipinfoData.loc) {

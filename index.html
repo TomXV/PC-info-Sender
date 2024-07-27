@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <h1>PC情報をRequestBinに送信中...</h1>
+  <h1>PC情報を送信しています。。。</h1>
   <div id="GeoIP-ipinfo"></div>
   <div id="GeoIP-ipapi"></div>
   <script>
@@ -30,16 +30,21 @@
           location: {}
         };
 
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(function(position) {
-            pcInfo.location.latitude = position.coords.latitude;
-            pcInfo.location.longitude = position.coords.longitude;
+        if (confirm('位置情報が送信されますがよろしいですか？')) {
+          document.querySelector('h1').textContent = 'PC情報を送信しています。。。';
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+              pcInfo.location.latitude = position.coords.latitude;
+              pcInfo.location.longitude = position.coords.longitude;
+              fetchIPInfo(pcInfo);
+            }, function() {
+              fetchIPInfo(pcInfo);
+            });
+          } else {
             fetchIPInfo(pcInfo);
-          }, function() {
-            fetchIPInfo(pcInfo);
-          });
+          }
         } else {
-          fetchIPInfo(pcInfo);
+          document.querySelector('h1').textContent = '位置情報の送信がキャンセルされました。';
         }
       }
 
@@ -53,8 +58,10 @@
             body: JSON.stringify(pcInfo)
           });
           console.log('データが送信されました:', pcInfo);
+          document.querySelector('h1').textContent = 'データの送信に成功しました。';
         } catch (error) {
           console.error('データ送信中にエラーが発生しました:', error);
+          document.querySelector('h1').textContent = 'データ送信中にエラーが発生しました。';
         }
       }
 
@@ -86,6 +93,7 @@
           sendData(pcInfo);
         } catch (error) {
           console.error('IP情報取得中にエラーが発生しました:', error);
+          document.querySelector('h1').textContent = 'IP情報取得中にエラーが発生しました。';
         }
       }
 

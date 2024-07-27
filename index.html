@@ -9,6 +9,9 @@
     #GeoIP-ipinfo, #GeoIP-ipapi, #pc-info {
       display: none;
     }
+    #loading {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -22,6 +25,12 @@
     <div class="text-center mt-4" id="buttons">
       <button id="allow" class="btn btn-primary">許可する</button>
       <button id="deny" class="btn btn-secondary">許可しない</button>
+    </div>
+    <div id="loading" class="text-center mt-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+      <p>データを送信しています...</p>
     </div>
     <div id="GeoIP-ipinfo" class="mt-4"></div>
     <div id="GeoIP-ipapi" class="mt-4"></div>
@@ -65,6 +74,8 @@
         } catch (error) {
           console.error('データ送信中にエラーが発生しました:', error);
           document.querySelector('h1').textContent = 'データ送信中にエラーが発生しました。';
+        } finally {
+          document.getElementById('loading').style.display = 'none';
         }
       }
 
@@ -96,11 +107,13 @@
         } catch (error) {
           console.error('IP情報取得中にエラーが発生しました:', error);
           document.querySelector('h1').textContent = 'IP情報取得中にエラーが発生しました。';
+          document.getElementById('loading').style.display = 'none';
         }
       }
 
       function handleAllow() {
         document.getElementById('buttons').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(function(position) {
             const pcInfo = {
@@ -121,7 +134,7 @@
             fetchIPInfo(pcInfo);
           }, function() {
             collectPCInfo();
-          });
+          }, { timeout: 10000 });
         } else {
           collectPCInfo();
         }
@@ -129,6 +142,7 @@
 
       function handleDeny() {
         document.getElementById('buttons').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
         collectPCInfo();
       }
 

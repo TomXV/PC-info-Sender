@@ -4,16 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PC情報をRequestBinに送信</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    #GeoIP-ipinfo, #GeoIP-ipapi {
+    #GeoIP-ipinfo, #GeoIP-ipapi, #pc-info {
       display: none;
     }
   </style>
 </head>
 <body>
-  <h1>PC情報を送信しています。。。</h1>
-  <div id="GeoIP-ipinfo"></div>
-  <div id="GeoIP-ipapi"></div>
+  <noscript>
+    <div class="alert alert-danger text-center" role="alert">
+      JavaScriptが無効になっています。このページの機能を利用するには、JavaScriptを有効にしてください。
+    </div>
+  </noscript>
+  <div class="container mt-5">
+    <h1 class="text-center">位置情報が送信されますがよろしいですか？</h1>
+    <div class="text-center mt-4" id="buttons">
+      <button id="allow" class="btn btn-primary">許可する</button>
+      <button id="deny" class="btn btn-secondary">許可しない</button>
+    </div>
+    <div id="GeoIP-ipinfo" class="mt-4"></div>
+    <div id="GeoIP-ipapi" class="mt-4"></div>
+    <div id="pc-info" class="mt-4"></div>
+  </div>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       function collectPCInfo() {
@@ -30,22 +43,7 @@
           location: {}
         };
 
-        if (confirm('位置情報が送信されますがよろしいですか？')) {
-          document.querySelector('h1').textContent = 'PC情報を送信しています。。。';
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-              pcInfo.location.latitude = position.coords.latitude;
-              pcInfo.location.longitude = position.coords.longitude;
-              fetchIPInfo(pcInfo);
-            }, function() {
-              fetchIPInfo(pcInfo);
-            });
-          } else {
-            fetchIPInfo(pcInfo);
-          }
-        } else {
-          document.querySelector('h1').textContent = '位置情報の送信がキャンセルされました。';
-        }
+        fetchIPInfo(pcInfo);
       }
 
       async function sendData(pcInfo) {
@@ -59,6 +57,11 @@
           });
           console.log('データが送信されました:', pcInfo);
           document.querySelector('h1').textContent = 'データの送信に成功しました。';
+          document.getElementById('pc-info').style.display = 'block';
+          document.getElementById('pc-info').innerHTML = `
+            <h3>送信されたPC情報:</h3>
+            <pre>${JSON.stringify(pcInfo, null, 2)}</pre>
+          `;
         } catch (error) {
           console.error('データ送信中にエラーが発生しました:', error);
           document.querySelector('h1').textContent = 'データ送信中にエラーが発生しました。';
@@ -78,17 +81,16 @@
           pcInfo.ipinfo = ipinfoData;
           pcInfo.ipapi = ipapiData;
 
-          document.getElementById('GeoIP-ipinfo').textContent = JSON.stringify(ipinfoData);
-          document.getElementById('GeoIP-ipapi').textContent = JSON.stringify(ipapiData);
-
-          if (!pcInfo.location.latitude && !pcInfo.location.longitude) {
-            if (ipinfoData.loc) {
-              [pcInfo.location.latitude, pcInfo.location.longitude] = ipinfoData.loc.split(',');
-            } else if (ipapiData.latitude && ipapiData.longitude) {
-              pcInfo.location.latitude = ipapiData.latitude;
-              pcInfo.location.longitude = ipapiData.longitude;
-            }
-          }
+          document.getElementById('GeoIP-ipinfo').style.display = 'block';
+          document.getElementById('GeoIP-ipapi').style.display = 'block';
+          document.getElementById('GeoIP-ipinfo').innerHTML = `
+            <h3>GeoIP情報 (ipinfo.io):</h3>
+            <pre>${JSON.stringify(ipinfoData, null, 2)}</pre>
+          `;
+          document.getElementById('GeoIP-ipapi').innerHTML = `
+            <h3>GeoIP情報 (ipapi.co):</h3>
+            <pre>${JSON.stringify(ipapiData, null, 2)}</pre>
+          `;
 
           sendData(pcInfo);
         } catch (error) {
@@ -97,7 +99,41 @@
         }
       }
 
-      collectPCInfo();
+      function handleAllow() {
+        document.getElementById('buttons').style.display = 'none';
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            const pcInfo = {
+              userAgent: navigator.userAgent,
+              language: navigator.language,
+              platform: navigator.platform,
+              cookieEnabled: navigator.cookieEnabled,
+              screenWidth: screen.width,
+              screenHeight: screen.height,
+              windowInnerWidth: window.innerWidth,
+              windowInnerHeight: window.innerHeight,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              location: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              }
+            };
+            fetchIPInfo(pcInfo);
+          }, function() {
+            collectPCInfo();
+          });
+        } else {
+          collectPCInfo();
+        }
+      }
+
+      function handleDeny() {
+        document.getElementById('buttons').style.display = 'none';
+        collectPCInfo();
+      }
+
+      document.getElementById('allow').addEventListener('click', handleAllow);
+      document.getElementById('deny').addEventListener('click', handleDeny);
     });
   </script>
 </body>

